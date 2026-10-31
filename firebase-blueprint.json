@@ -1,0 +1,50 @@
+{
+  "entities": {
+    "SchoolData": {
+      "title": "SchoolData",
+      "description": "Comprehensive school assessment data including settings, grading scales, subjects, and student results",
+      "type": "object",
+      "properties": {
+        "settings": {
+          "type": "object",
+          "description": "School details, exam title, logo, and slip display configurations"
+        },
+        "gradeScale": {
+          "type": "object",
+          "description": "Minimum score thresholds for each grade from A to F"
+        },
+        "subjects": {
+          "type": "array",
+          "description": "Array of subject objects with id, code, and name"
+        },
+        "students": {
+          "type": "array",
+          "description": "Array of student rows with identification, marks, teacher names, and remarks"
+        },
+        "gradeOverrides": {
+          "type": "object",
+          "description": "Custom grade overrides mapped by student ID and subject ID"
+        },
+        "resultOverrides": {
+          "type": "object",
+          "description": "Custom result overrides (LULUS or GAGAL) mapped by student ID"
+        },
+        "adminPassword": {
+          "type": "string",
+          "description": "Teacher admin passcode for authorization"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating the last update"
+        }
+      },
+      "required": ["settings", "students", "subjects", "gradeScale"]
+    }
+  },
+  "firestore": {
+    "/school_data/{documentId}": {
+      "schema": "SchoolData",
+      "description": "Stores the central school assessment document loaded by all shared users and edited by teachers"
+    }
+  }
+}

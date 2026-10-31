@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penjana Slip Keputusan & Analisis Pentaksiran Sekolah Rendah</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for Visual Analysis -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS for Excel Upload support -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        /* Print Specific Styling */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                background-color: #ffffff !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .print-container {
+                width: 100% !important;
+                max-width: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+            }
+            .page-break {
+                page-break-after: always;
+                break-after: page;
+            }
+            .slip-card {
+                box-shadow: none !important;
+                border: 1px solid #e2e8f0 !important;
+                padding: 2.5rem !important;
+                margin-bottom: 0 !important;
+                min-height: 98vh;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+            }
+        }
+
+        /* Borderless minimal table rows */
+        .table-minimal th, .table-minimal td {
+            border: none !important;
+            padding: 10px 14px;
+        }
+        .table-minimal tbody tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        .table-minimal tbody tr {
+            border-bottom: 1px solid #f1f5f9 !important;
+        }
+
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-indigo-700 text-white shadow-md no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-indigo-600 rounded-lg">
+                    <i data-lucide="graduation-cap" class="w-6 h-6 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">Penjana Slip Keputusan</h1>
+                    <p class="text-xs text-indigo-200">Pentaksiran & Analisis Sekolah Rendah</p>
+                </div>
+            </div>
+            
+            <!-- Main Navigation Tabs -->
+            <nav class="flex space-x-1 sm:space-x-2 bg-indigo-800/50 p-1 rounded-xl">
+                <button id="nav-data-tab" onclick="switchMainTab('data')" class="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium rounded-lg transition-all bg-white text-indigo-900 shadow-sm flex items-center space-x-2">
+                    <i data-lucide="database" class="w-4 h-4"></i>
+                    <span>Input Data Pukal</span>
+                </button>
+                <button id="nav-slips-tab" onclick="switchMainTab('slips')" class="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium rounded-lg text-indigo-100 hover:bg-indigo-600 transition-all flex items-center space-x-2">
+                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                    <span>Paparan Slip</span>
+                </button>
+                <button id="nav-analysis-tab" onclick="switchMainTab('analysis')" class="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium rounded-lg text-indigo-100 hover:bg-indigo-600 transition-all flex items-center space-x-2">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                    <span>Analisis Khas</span>
+                </button>
+                <button onclick="shareLink()" class="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-all flex items-center space-x-1.5 shadow-sm">
+                    <i data-lucide="share-2" class="w-4 h-4"></i>
+                    <span class="hidden md:inline">Salin Pautan</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- App Content Wrapper -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- ========================================== -->
+        <!-- TAB 1: INPUT DATA PUKAL & TETAPAN          -->
+        <!-- ========================================== -->
+        <section id="tab-data" class="space-y-6">
+            <!-- Header Settings Card & Logo Upload -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <i data-lucide="settings" class="w-5 h-5 text-indigo-600"></i>
+                    Tetapan Maklumat Sekolah & Ujian
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                    <!-- Logo Upload Section -->
+                    <div class="flex flex-col items-center justify-center p-3 border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 hover:bg-slate-100 transition relative">
+                        <div id="logo-preview-container" class="w-16 h-16 mb-2 flex items-center justify-center bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                            <i id="logo-placeholder-icon" data-lucide="image" class="w-8 h-8 text-slate-400"></i>
+                            <img id="school-logo-img" class="w-full h-full object-contain hidden" alt="Logo Sekolah">
+                        </div>
+                        <div class="flex gap-2">
+                            <label class="px-3 py-1 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg cursor-pointer transition flex items-center gap-1">
+                                <i data-lucide="upload" class="w-3 h-3"></i>
+                                Upload Logo
+                                <input type="file" id="logo-file-input" accept="image/*" class="hidden" onchange="handleLogoUpload(event)">
+                            </label>
+                            <button id="remove-logo-btn" onclick="removeLogo()" class="hidden px-2 py-1 text-xs font-semibold bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg transition">
+                                Padam
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- School Name & Exam Title -->
+                    <div class="md:col-span-2 space-y-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nama & Alamat Sekolah</label>
+                            <input type="text" id="cfg-school-name" value="SEKOLAH KEBANGSAAN SI-RUSA&#10;PERSIARAN PAHLAWAN, PORT DICKSON" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Tajuk Ujian / Pentaksiran</label>
+                            <input type="text" id="cfg-exam-title" value="SLIP KEPUTUSAN PENTAKSIRAN TAHUN 3" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grade Threshold Settings -->
+                <div class="mt-6 pt-4 border-t border-slate-100">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-xs font-semibold text-slate-600 uppercase">Tetapan Skala Gred Boleh Disunting (Sila Bebas Menetapkan Julat Markah Minima)</label>
+                        <span class="text-[11px] text-indigo-600 font-medium">*Masukkan markah minima (Minimum Score) bagi setiap gred</span>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                        <div class="bg-indigo-50/50 p-3 rounded-xl border border-indigo-100 text-center shadow-xs">
+                            <span class="font-bold text-indigo-700 text-sm block mb-1">Gred A</span>
+                            <div class="flex items-center justify-center gap-1 text-xs">
+                                <span class="text-slate-500 font-medium">Min:</span>
+                                <input type="number" id="gred-a-min" value="80" min="0" max="100" class="w-16 text-center border border-indigo-300 rounded-md p-1 font-bold text-indigo-900 bg-white focus:ring-2 focus:ring-indigo-500 outline-none" onchange="processData()">
+                            </div>
+                        </div>
+                        <div class="bg-blue-50/50 p-3 rounded-xl border border-blue-100 text-center shadow-xs">
+                            <span class="font-bold text-blue-700 text-sm block mb-1">Gred B</span>
+                            <div class="flex items-center justify-center gap-1 text-xs">
+                                <span class="text-slate-500 font-medium">Min:</span>
+                                <input type="number" id="gred-b-min" value="65" min="0" max="100" class="w-16 text-center border border-blue-300 rounded-md p-1 font-bold text-blue-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none" onchange="processData()">
+                            </div>
+                        </div>
+                        <div class="bg-amber-50/50 p-3 rounded-xl border border-amber-100 text-center shadow-xs">
+                            <span class="font-bold text-amber-700 text-sm block mb-1">Gred C</span>
+                            <div class="flex items-center justify-center gap-1 text-xs">
+                                <span class="text-slate-500 font-medium">Min:</span>
+                                <input type="number" id="gred-c-min" value="50" min="0" max="100" class="w-16 text-center border border-amber-300 rounded-md p-1 font-bold text-amber-900 bg-white focus:ring-2 focus:ring-amber-500 outline-none" onchange="processData()">
+                            </div>
+                        </div>
+                        <div class="bg-orange-50/50 p-3 rounded-xl border border-orange-100 text-center shadow-xs">
+                            <span class="font-bold text-orange-700 text-sm block mb-1">Gred D</span>
+                            <div class="flex items-center justify-center gap-1 text-xs">
+                                <span class="text-slate-500 font-medium">Min:</span>
+                                <input type="number" id="gred-d-min" value="40" min="0" max="100" class="w-16 text-center border border-orange-300 rounded-md p-1 font-bold text-orange-900 bg-white focus:ring-2 focus:ring-orange-500 outline-none" onchange="processData()">
+                            </div>
+                        </div>
+                        <div class="bg-rose-50/50 p-3 rounded-xl border border-rose-100 text-center shadow-xs">
+                            <span class="font-bold text-rose-700 text-sm block mb-1">Gred E</span>
+                            <div class="flex items-center justify-center gap-1 text-xs">
+                                <span class="text-slate-500 font-medium">Min:</span>
+                                <input type="number" id="gred-e-min" value="0" min="0" max="100" class="w-16 text-center border border-rose-300 rounded-md p-1 font-bold text-rose-900 bg-white focus:ring-2 focus:ring-rose-500 outline-none" onchange="processData()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Spreadsheet Grid Input Section -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="table" class="w-5 h-5 text-indigo-600"></i>
+                            Spreadsheet Input (Boleh Edit Data & Gred)
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Tampal (Paste) terus mana-mana sel/lajur dari Excel / Google Sheets atau sunting terus di dalam petak di bawah.</p>
+                    </div>
+
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <button onclick="loadSampleData()" class="px-3 py-1.5 text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition flex items-center gap-1.5">
+                            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                            Muat Data Contoh
+                        </button>
+                        <label class="px-3 py-1.5 text-xs font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-lg cursor-pointer transition flex items-center gap-1.5">
+                            <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                            Muat Naik Excel (.xlsx)
+                            <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileUpload(event)">
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Grid Table Toolbar Controls -->
+                <div class="flex items-center justify-between gap-2 mb-3 bg-slate-50 p-2 rounded-xl border border-slate-200 text-xs">
+                    <div class="flex items-center gap-2">
+                        <button onclick="addNewGridRow()" class="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-100 font-semibold rounded-lg text-slate-700 flex items-center gap-1">
+                            <i data-lucide="plus" class="w-3.5 h-3.5 text-emerald-600"></i> Tambah Baris
+                        </button>
+                        <button onclick="clearGridData()" class="px-3 py-1.5 bg-white border border-slate-300 hover:bg-rose-50 hover:text-rose-600 font-semibold rounded-lg text-slate-700 flex items-center gap-1">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5 text-rose-500"></i> Kosongkan Jadual
+                        </button>
+                    </div>
+                    <span class="text-slate-500 text-[11px] hidden sm:inline">*Petua: Tekan <b>Ctrl + V</b> pada mana-mana sel untuk menampal berbilang baris/lajur.</span>
+                </div>
+
+                <!-- Interactive Spreadsheet Table Grid -->
+                <div class="overflow-x-auto border border-slate-300 rounded-xl max-h-[460px] relative shadow-inner">
+                    <table id="spreadsheet-table" class="w-full border-collapse text-xs bg-white min-w-[1100px]">
+                        <thead class="bg-slate-100 text-slate-700 sticky top-0 z-10 shadow-sm font-semibold select-none">
+                            <tr>
+                                <th class="w-10 p-2 border border-slate-300 text-center bg-slate-200">#</th>
+                                <th class="p-2 border border-slate-300 text-left min-w-[180px]">NAMA MURID</th>
+                                <th class="p-2 border border-slate-300 text-left min-w-[100px]">KELAS</th>
+                                <th class="p-2 border border-slate-300 text-left min-w-[110px]">NO. K/P</th>
+                                <th class="p-2 border border-slate-300 text-center w-20">JANTINA</th>
+                                <th class="p-2 border border-slate-300 text-center w-20">BM</th>
+                                <th class="p-2 border border-slate-300 text-center w-20">BI</th>
+                                <th class="p-2 border border-slate-300 text-center w-20">MT</th>
+                                <th class="p-2 border border-slate-300 text-center w-20">SN</th>
+                                <th class="p-2 border border-slate-300 text-center w-20">SEJ</th>
+                                <th class="p-2 border border-slate-300 text-left min-w-[140px]">NAMA GURU KELAS</th>
+                                <th class="p-2 border border-slate-300 text-left min-w-[180px]">ULASAN</th>
+                                <th class="w-10 p-2 border border-slate-300 text-center bg-slate-200"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="spreadsheet-tbody" class="divide-y divide-slate-200">
+                            <!-- Dynamic Spreadsheet Rows -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+                    <span id="data-status" class="text-xs font-medium text-slate-500">Tiada data diimbas.</span>
+                    <button onclick="processData()" class="w-full sm:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
+                        <i data-lucide="sparkles" class="w-4 h-4"></i>
+                        Proses & Penjana Slip
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 2: PAPARAN SLIP (SINGLE & BULK PRINT)  -->
+        <!-- ========================================== -->
+        <section id="tab-slips" class="hidden space-y-6">
+            
+            <!-- Controls Bar (No Print) -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 no-print flex flex-col md:flex-row items-center justify-between gap-4">
+                
+                <!-- Class Tabs -->
+                <div id="class-tabs-container" class="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
+                    <!-- Dynamic Class Tabs will be populated here -->
+                </div>
+
+                <!-- Action Toolbar -->
+                <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+                    <!-- Student Selector -->
+                    <select id="student-select" onchange="renderSelectedStudentSlip()" class="px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="all">-- Semua Murid (Semua Slip) --</option>
+                    </select>
+
+                    <button onclick="printSlips()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow transition flex items-center gap-2">
+                        <i data-lucide="printer" class="w-4 h-4"></i>
+                        Cetak Slip (PDF)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Print Preview Notice -->
+            <div class="no-print bg-indigo-50 border border-indigo-100 rounded-xl p-3 text-xs text-indigo-700 flex items-center justify-between">
+                <span class="flex items-center gap-2">
+                    <i data-lucide="eye" class="w-4 h-4"></i>
+                    Mod Pratinjau Slip Cetakan (Saiz Format A4)
+                </span>
+                <span id="slip-count-badge" class="font-bold bg-indigo-200 text-indigo-900 px-2 py-0.5 rounded-md">0 Slip</span>
+            </div>
+
+            <!-- Slips Container (Container printed directly) -->
+            <div id="slips-container" class="print-container space-y-8">
+                <!-- Dynamic Slips Rendered Here -->
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 3: ANALISIS KHAS (KELAS & SUBJEK)      -->
+        <!-- ========================================== -->
+        <section id="tab-analysis" class="hidden space-y-6">
+            
+            <!-- Sub tabs for Analysis -->
+            <div class="flex border-b border-slate-200 space-x-4 no-print">
+                <button id="subtab-class-btn" onclick="switchAnalysisSubTab('class')" class="pb-3 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 flex items-center gap-2">
+                    <i data-lucide="users" class="w-4 h-4"></i>
+                    Analisis Mengikut Kelas
+                </button>
+                <button id="subtab-subject-btn" onclick="switchAnalysisSubTab('subject')" class="pb-3 text-sm font-bold text-slate-500 hover:text-slate-700 border-b-2 border-transparent flex items-center gap-2">
+                    <i data-lucide="book-open" class="w-4 h-4"></i>
+                    Analisis Mengikut Subjek
+                </button>
+            </div>
+
+            <!-- SUB-TAB 1: CLASS ANALYSIS -->
+            <div id="analysis-class-view" class="space-y-6">
+                <!-- Dynamic Class Summary Cards -->
+                <div id="class-summary-cards" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Cards inserted via JS -->
+                </div>
+
+                <!-- Class Ranking & Breakdown Table -->
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                            <i data-lucide="trophy" class="w-5 h-5 text-amber-500"></i>
+                            Kedudukan & Rumusan Murid Mengikut Kelas
+                        </h3>
+                        <select id="analysis-class-filter" onchange="renderClassAnalysis()" class="px-3 py-1.5 text-xs font-semibold border border-slate-300 rounded-lg outline-none">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-700 border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-600 uppercase font-semibold border-b border-slate-200">
+                                    <th class="p-3 text-center">Ked.</th>
+                                    <th class="p-3">Nama Murid</th>
+                                    <th class="p-3">Kelas</th>
+                                    <th class="p-3 text-center">BM</th>
+                                    <th class="p-3 text-center">BI</th>
+                                    <th class="p-3 text-center">MT</th>
+                                    <th class="p-3 text-center">SN</th>
+                                    <th class="p-3 text-center">SEJ</th>
+                                    <th class="p-3 text-center">Jumlah Markah</th>
+                                    <th class="p-3 text-center">Purata (%)</th>
+                                    <th class="p-3 text-center">Keputusan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="analysis-class-table-body">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUB-TAB 2: SUBJECT ANALYSIS -->
+            <div id="analysis-subject-view" class="hidden space-y-6">
+                
+                <!-- Subject Charts Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Grade Distribution Chart -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <h4 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <i data-lucide="pie-chart" class="w-4 h-4 text-indigo-600"></i>
+                            Taburan Gred Mengikut Subjek
+                        </h4>
+                        <div class="h-64 relative">
+                            <canvas id="chart-grade-distribution"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Subject Average Chart -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <h4 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <i data-lucide="bar-chart-2" class="w-4 h-4 text-indigo-600"></i>
+                            Purata Markah (%) Mengikut Subjek
+                        </h4>
+                        <div class="h-64 relative">
+                            <canvas id="chart-subject-averages"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Subject Breakdown Table -->
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-slate-800 text-base mb-4 flex items-center gap-2">
+                        <i data-lucide="table" class="w-5 h-5 text-indigo-600"></i>
+                        Jadual Analisis Pencapaian Subjek
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-700 border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-600 uppercase font-semibold border-b border-slate-200">
+                                    <th class="p-3">Mata Pelajaran</th>
+                                    <th class="p-3 text-center">Bil. Calon</th>
+                                    <th class="p-3 text-center">A</th>
+                                    <th class="p-3 text-center">B</th>
+                                    <th class="p-3 text-center">C</th>
+                                    <th class="p-3 text-center">D</th>
+                                    <th class="p-3 text-center">E</th>
+                                    <th class="p-3 text-center">Bil. Lulus</th>
+                                    <th class="p-3 text-center">% Lulus</th>
+                                    <th class="p-3 text-center">Purata Markah (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="analysis-subject-table-body">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-4 mt-auto no-print text-center text-xs text-slate-500">
+        <p>© 2026 Penjana Slip Pentaksiran Sekolah Rendah. Rekabentuk Minimalis & Mesra Cetakan.</p>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Global Application State
+        let parsedStudents = [];
+        let activeClassTab = "ALL";
+        let gradeChartInstance = null;
+        let avgChartInstance = null;
+        let schoolLogoDataUrl = "";
+
+        const SUBJECT_KEYS = ['bm', 'bi', 'mt', 'sn', 'sej'];
+        const SUBJECT_NAMES = {
+            bm: 'Bahasa Melayu',
+            bi: 'Bahasa Inggeris',
+            mt: 'Matematik',
+            sn: 'Sains',
+            sej: 'Sejarah'
+        };
+
+        // Initialize grid & icons on load
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            loadSampleData();
+        });
+
+        // Logo Upload Handling
+        function handleLogoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                schoolLogoDataUrl = e.target.result;
+                const logoImg = document.getElementById('school-logo-img');
+                const placeholder = document.getElementById('logo-placeholder-icon');
+                const removeBtn = document.getElementById('remove-logo-btn');
+
+                logoImg.src = schoolLogoDataUrl;
+                logoImg.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+                removeBtn.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeLogo() {
+            schoolLogoDataUrl = "";
+            document.getElementById('school-logo-img').src = "";
+            document.getElementById('school-logo-img').classList.add('hidden');
+            document.getElementById('logo-placeholder-icon').classList.remove('hidden');
+            document.getElementById('remove-logo-btn').classList.add('hidden');
+            document.getElementById('logo-file-input').value = "";
+        }
+
+        // Navigation Tab Switcher
+        function switchMainTab(tab) {
+            document.getElementById('tab-data').classList.add('hidden');
+            document.getElementById('tab-slips').classList.add('hidden');
+            document.getElementById('tab-analysis').classList.add('hidden');
+
+            document.getElementById('nav-data-tab').className = "px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium rounded-lg text-indigo-100 hover:bg-indigo-600 transition-all flex items-center space-x-2";
+            document.getElementById('nav-slips-tab').className = "px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium rounded-lg text-indigo-100 hover:bg-indigo-600 transition-all flex items-center space-x-2";
+            document.getElementById('nav-analysis-tab').className = "px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium rounded-lg text-indigo-100 hover:bg-indigo-600 transition-all flex items-center space-x-2";
+
+            if (tab === 'data') {
+                document.getElementById('tab-data').classList.remove('hidden');
+                document.getElementById('nav-data-tab').className = "px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium rounded-lg transition-all bg-white text-indigo-900 shadow-sm flex items-center space-x-2";
+            } else if (tab === 'slips') {
+                document.getElementById('tab-slips').classList.remove('hidden');
+                document.getElementById('nav-slips-tab').className = "px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium rounded-lg transition-all bg-white text-indigo-900 shadow-sm flex items-center space-x-2";
+                renderSlips();
+            } else if (tab === 'analysis') {
+                document.getElementById('tab-analysis').classList.remove('hidden');
+                document.getElementById('nav-analysis-tab').className = "px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium rounded-lg transition-all bg-white text-indigo-900 shadow-sm flex items-center space-x-2";
+                renderAnalysis();
+            }
+        }
+
+        function switchAnalysisSubTab(sub) {
+            const classBtn = document.getElementById('subtab-class-btn');
+            const subjBtn = document.getElementById('subtab-subject-btn');
+            const classView = document.getElementById('analysis-class-view');
+            const subjView = document.getElementById('analysis-subject-view');
+
+            if (sub === 'class') {
+                classBtn.className = "pb-3 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 flex items-center gap-2";
+                subjBtn.className = "pb-3 text-sm font-bold text-slate-500 hover:text-slate-700 border-b-2 border-transparent flex items-center gap-2";
+                classView.classList.remove('hidden');
+                subjView.classList.add('hidden');
+            } else {
+                subjBtn.className = "pb-3 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 flex items-center gap-2";
+                classBtn.className = "pb-3 text-sm font-bold text-slate-500 hover:text-slate-700 border-b-2 border-transparent flex items-center gap-2";
+                subjView.classList.remove('hidden');
+                classView.classList.add('hidden');
+                renderSubjectCharts();
+            }
+        }
+
+        // Grade Calculator with Editable capability
+        function getGrade(score) {
+            if (typeof score === 'string' && ['A','B','C','D','E'].includes(score.trim().toUpperCase())) {
+                return score.trim().toUpperCase();
+            }
+            const numScore = parseFloat(score);
+            if (isNaN(numScore)) return '-';
+
+            const aMin = parseFloat(document.getElementById('gred-a-min').value) ?? 80;
+            const bMin = parseFloat(document.getElementById('gred-b-min').value) ?? 65;
+            const cMin = parseFloat(document.getElementById('gred-c-min').value) ?? 50;
+            const dMin = parseFloat(document.getElementById('gred-d-min').value) ?? 40;
+            const eMin = parseFloat(document.getElementById('gred-e-min').value) ?? 0;
+
+            if (numScore >= aMin) return 'A';
+            if (numScore >= bMin) return 'B';
+            if (numScore >= cMin) return 'C';
+            if (numScore >= dMin) return 'D';
+            if (numScore >= eMin) return 'E';
+            return 'E';
+        }
+
+        // Calculate Grade Point Average (GPC: A=1, B=2, C=3, D=4, E=5)
+        function getGPC(grades) {
+            const map = { 'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5 };
+            let totalPoints = 0;
+            let count = 0;
+            grades.forEach(g => {
+                if (map[g]) {
+                    totalPoints += map[g];
+                    count++;
+                }
+            });
+            return count > 0 ? (totalPoints / count).toFixed(2) : '0.00';
+        }
+
+        function getOverallGradeSummary(grades) {
+            const counts = { A: 0, B: 0, C: 0, D: 0, E: 0 };
+            grades.forEach(g => { if (counts[g] !== undefined) counts[g]++; });
+            const res = [];
+            ['A','B','C','D','E'].forEach(k => {
+                if (counts[k] > 0) res.push(`${counts[k]}${k}`);
+            });
+            return res.join(' ') || '-';
+        }
+
+        // Spreadsheet Grid Rendering & Interactivity
+        function renderSpreadsheetGrid(dataRows) {
+            const tbody = document.getElementById('spreadsheet-tbody');
+            tbody.innerHTML = '';
+
+            // Render minimum 8 rows for empty grid appearance
+            const rowCount = Math.max(dataRows.length, 8);
+
+            for (let i = 0; i < rowCount; i++) {
+                const rowData = dataRows[i] || ['', '', '', '', '', '', '', '', '', '', ''];
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-indigo-50/30 group";
+                tr.innerHTML = `
+                    <td class="p-2 border border-slate-200 text-center font-bold text-slate-400 bg-slate-50 select-none">${i + 1}</td>
+                    <td class="p-0 border border-slate-200"><input type="text" class="grid-cell w-full px-2 py-1.5 outline-none focus:bg-indigo-50/50 focus:ring-2 focus:ring-indigo-500 font-medium text-slate-800" value="${escapeHtml(rowData[0] || '')}"></td>
+                    <td class="p-0 border border-slate-200"><input type="text" class="grid-cell w-full px-2 py-1.5 outline-none focus:bg-indigo-50/50 focus:ring-2 focus:ring-indigo-500 uppercase" value="${escapeHtml(rowData[1] || '')}"></td>
+                    <td class="p-0 border border-slate-200"><input type="text" class="grid-cell w-full px-2 py-1.5 outline-none focus:bg-indigo-50/50 focus:ring-2 focus:ring-indigo-500" value="${escapeHtml(rowData[2] || '')}"></td>
+                    <td class="p-0 border border-slate-200"><input type="text" class="grid-cell w-full px-2 py-1.5 outline-none focus:bg-indigo-50/50 focus:ring-2 focus:ring-indigo-500 text-center uppercase" value="${escapeHtml(rowData[3] || 'LELAKI')}"></td>
+                    <td class="p-0 border border-slate-200"><input type="number" class="grid-cell w-full px-2 py-1.5 outline-none focus:bg-indigo-50/50 focus:ring-2 focus:ring-indigo-500 text-center font-semibold" value="${rowData[4] !== undefined ? rowData[4] : ''}"></td>
+                    <td class="p-0 border border-slate-200"><input type="number" class="grid-cell w-full px-2 py-1.5 outline-none focus:bg-indigo-50/50 focus:ring-2 focus:ring-indigo-500 text-center font-semibold" value="${rowData[5] !== undefined ? rowData[5] : ''}"></td>
+                    <td class="p-0 border border-slate-200"><input type="number" class="grid-cell w-full px-2 py-1.5 outline-none focus:bg-indigo-50/50 focus:ring-2 focus:ring-indigo-500 text-center font-semibold" value="${rowData[6] !== undefined ? rowData[6] : ''}"></td>
+                    <td class="p-0 border border-slate-200"><input type="number" class="grid-cell w-full px-2 py-1.5 outline-none focus:bg-indigo-50/50 focus:ring-2 focus:ring-indigo-500 text-center font-semibold" value="${rowData[7] !== undefined ? rowData[7] : ''}"></td>
+                    <td class="p-0 border border-slate-200"><input type="number" class="grid-cell w-full px-2 py-1.5 outline-none focus:bg-indigo-50/50 focus:ring-2 focus:ring-indigo-500 text-center font-semibold" value="${rowData[8] !== undefined ? rowData[8] : ''}"></td>
+                    <td class="p-0 border border-slate-200"><input type="text" class="grid-cell w-full px-2 py-1.5 outline-none focus:bg-indigo-50/50 focus:ring-2 focus:ring-indigo-500 text-slate-700" value="${escapeHtml(rowData[9] || 'PN. NORAINI BINTI HASNAN')}"></td>
+                    <td class="p-0 border border-slate-200"><input type="text" class="grid-cell w-full px-2 py-1.5 outline-none focus:bg-indigo-50/50 focus:ring-2 focus:ring-indigo-500 text-slate-600" value="${escapeHtml(rowData[10] || '')}"></td>
+                    <td class="p-1 border border-slate-200 text-center bg-slate-50">
+                        <button onclick="removeGridRow(this)" class="p-1 text-slate-300 hover:text-rose-600 transition" title="Padam Baris">
+                            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            }
+
+            attachPasteListenerToCells();
+            lucide.createIcons();
+        }
+
+        // Attach Google Sheets style Paste handler across cells
+        function attachPasteListenerToCells() {
+            const tbody = document.getElementById('spreadsheet-tbody');
+            tbody.addEventListener('paste', function (e) {
+                const target = e.target;
+                if (!target.classList.contains('grid-cell')) return;
+
+                e.preventDefault();
+                const clipboardData = e.clipboardData || window.clipboardData;
+                const pastedText = clipboardData.getData('text');
+
+                if (!pastedText) return;
+
+                const rows = pastedText.trim().split('\n').map(r => r.split('\t'));
+                const currentRow = target.closest('tr');
+                const startRowIdx = Array.from(tbody.children).indexOf(currentRow);
+                const startColIdx = Array.from(currentRow.querySelectorAll('input')).indexOf(target);
+
+                rows.forEach((rowValues, rOffset) => {
+                    let targetRow = tbody.children[startRowIdx + rOffset];
+                    if (!targetRow) {
+                        addNewGridRow();
+                        targetRow = tbody.lastElementChild;
+                    }
+
+                    const inputs = targetRow.querySelectorAll('input');
+                    rowValues.forEach((val, cOffset) => {
+                        const cellInput = inputs[startColIdx + cOffset];
+                        if (cellInput) {
+                            cellInput.value = val.trim();
+                        }
+                    });
+                });
+            });
+        }
+
+        function addNewGridRow() {
+            const tbody = document.getElementById('spreadsheet-tbody');
+            const rowCount = tbody.children.length;
+            const tr = document.createElement('tr');
+            tr.className = "hover:bg-indigo-50/30 group";
+            tr.innerHTML = `
+                <td class="p-2 border border-slate-200 text-center font-bold text-slate-400 bg-slate-50 select-none">${rowCount + 1}</td>
+                <td class="p-0 border border-slate-200"><input type="text" class="grid-cell w-full px-2 py-1.5 outline-none focus:bg-indigo-50/50 focus:ring-2 focus:ring-indigo-500 font-medium text-slate-800" value=""></td>
+                <td class="p-0 border border-slate-200"><input type="text" class="grid-cell w-full px-2 py-1.5 outline-none focus:bg-indigo-50/50 focus:ring-2 focus:ring-indigo-500 uppercase" value=""></td>
+                <td class="p-0 border border-slate-200"><input type="text" class="grid-cell w-full px-2 py-1.5 outline-none focus:bg-indigo-50/50 focus:ring-2 focus:ring-indigo-500" value=""></td>
+                <td class="p-0 border border-slate-200"><input type="text" class="grid-cell w-full px-2 py-1.5 outline-none focus:bg-indigo-50/50 focus:ring-2 focus:ring-indigo-500 text-center uppercase" value="LELAKI"></td>
+                <td class="p-0 border border-slate-200"><input type="number" class="grid-cell w-full px-2 py-1.5 outline-none focus:bg-indigo-50/50 focus:ring-2 focus:ring-indigo-500 text-center font-semibold" value=""></td>
+                <td class="p-0 border border-slate-200"><input type="number" class="grid-cell w-full px-2 py-1.5 outline-none focus:bg-indigo-50/50 focus:ring-2 focus:ring-indigo-500 text-center font-semibold" value=""></td>
+                <td class="p-0 border border-slate-200"><input type="number" class="grid-cell w-full px-2 py-1.5 outline-none focus:bg-indigo-50/50 focus:ring-2 focus:ring-indigo-500 text-center font-semibold" value=""></td>
+                <td class="p-0 border border-slate-200"><input type="number" class="grid-cell w-full px-2 py-1.5 outline-none focus:bg-indigo-50/50 focus:ring-2 focus:ring-indigo-500 text-center font-semibold" value=""></td>
+                <td class="p-0 border border-slate-200"><input type="number" class="grid-cell w-full px-2 py-1.5 outline-none focus:bg-indigo-50/50 focus:ring-2 focus:ring-indigo-500 text-center font-semibold" value=""></td>
+                <td class="p-0 border border-slate-200"><input type="text" class="grid-cell w-full px-2 py-1.5 outline-none focus:bg-indigo-50/50 focus:ring-2 focus:ring-indigo-500 text-slate-700" value="PN. NORAINI BINTI HASNAN"></td>
+                <td class="p-0 border border-slate-200"><input type="text" class="grid-cell w-full px-2 py-1.5 outline-none focus:bg-indigo-50/50 focus:ring-2 focus:ring-indigo-500 text-slate-600" value=""></td>
+                <td class="p-1 border border-slate-200 text-center bg-slate-50">
+                    <button onclick="removeGridRow(this)" class="p-1 text-slate-300 hover:text-rose-600 transition" title="Padam Baris">
+                        <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+            lucide.createIcons();
+        }
+
+        function removeGridRow(btn) {
+            const tr = btn.closest('tr');
+            tr.remove();
+            const rows = document.querySelectorAll('#spreadsheet-tbody tr');
+            rows.forEach((row, idx) => {
+                row.cells[0].innerText = idx + 1;
+            });
+        }
+
+        function clearGridData() {
+            renderSpreadsheetGrid([]);
+            updateStatus(0);
+        }
+
+        // Process Interactive Spreadsheet Table Input Data
+        function processData() {
+            const tbody = document.getElementById('spreadsheet-tbody');
+            const rows = tbody.querySelectorAll('tr');
+            const list = [];
+
+            rows.forEach((tr, index) => {
+                const inputs = tr.querySelectorAll('input');
+                const name = inputs[0]?.value.trim();
+                const className = inputs[1]?.value.trim();
+
+                if (!name && !className) return;
+
+                const student = {
+                    id: index + 1,
+                    name: name || 'NAMA MURID',
+                    className: className || '3 BESTARI',
+                    mykid: inputs[2]?.value.trim() || '-',
+                    jantina: inputs[3]?.value.trim() || 'LELAKI',
+                    bm: parseFloat(inputs[4]?.value) || 0,
+                    bi: parseFloat(inputs[5]?.value) || 0,
+                    mt: parseFloat(inputs[6]?.value) || 0,
+                    sn: parseFloat(inputs[7]?.value) || 0,
+                    sej: parseFloat(inputs[8]?.value) || 0,
+                    teacherName: inputs[9]?.value.trim() || 'PN. NORAINI BINTI HASNAN',
+                    notes: inputs[10]?.value.trim() || ''
+                };
+
+                // Individual Grades (support override)
+                student.bmGrade = getGrade(student.bm);
+                student.biGrade = getGrade(student.bi);
+                student.mtGrade = getGrade(student.mt);
+                student.snGrade = getGrade(student.sn);
+                student.sejGrade = getGrade(student.sej);
+
+                const studentGrades = [student.bmGrade, student.biGrade, student.mtGrade, student.snGrade, student.sejGrade];
+
+                // Computations
+                student.subjectCount = 5;
+                student.total = student.bm + student.bi + student.mt + student.sn + student.sej;
+                student.avg = parseFloat((student.total / 5).toFixed(1));
+                student.gpc = getGPC(studentGrades);
+                student.gredSummary = getOverallGradeSummary(studentGrades);
+                student.isPass = !studentGrades.includes('E');
+                student.resultStatus = student.isPass ? 'LULUS' : 'GAGAL';
+
+                list.push(student);
+            });
+
+            // Ranks Calculation (Class & Overall)
+            list.sort((a, b) => b.avg - a.avg);
+            list.forEach((s, idx) => {
+                s.overallRank = idx + 1;
+                s.totalStudentsOverall = list.length;
+            });
+
+            const classGroups = {};
+            list.forEach(s => {
+                if (!classGroups[s.className]) classGroups[s.className] = [];
+                classGroups[s.className].push(s);
+            });
+
+            Object.keys(classGroups).forEach(cName => {
+                classGroups[cName].sort((a, b) => b.avg - a.avg);
+                classGroups[cName].forEach((s, idx) => {
+                    s.classRank = idx + 1;
+                    s.classTotalCount = classGroups[cName].length;
+                });
+            });
+
+            parsedStudents = list;
+            updateStatus(parsedStudents.length);
+        }
+
+        function updateStudentGradeOverride(studentId, subjectKey, newGrade) {
+            const student = parsedStudents.find(s => s.id === studentId);
+            if (student) {
+                student[subjectKey + 'Grade'] = newGrade.toUpperCase();
+                const studentGrades = [student.bmGrade, student.biGrade, student.mtGrade, student.snGrade, student.sejGrade];
+                student.gpc = getGPC(studentGrades);
+                student.gredSummary = getOverallGradeSummary(studentGrades);
+                student.isPass = !studentGrades.includes('E');
+                student.resultStatus = student.isPass ? 'LULUS' : 'GAGAL';
+                renderSelectedStudentSlip();
+            }
+        }
+
+        function updateStatus(count) {
+            document.getElementById('data-status').innerHTML = count > 0 
+                ? `<span class="text-emerald-600 font-bold">✓ Berjaya mengimbas ${count} rekod murid.</span>` 
+                : `<span class="text-amber-600 font-bold">Tiada data dimasukkan dalam jadual.</span>`;
+            document.getElementById('slip-count-badge').innerText = `${count} Slip`;
+        }
+
+        // Load Default Sample Data into Grid
+        function loadSampleData() {
+            const sampleArray = [
+                ['Ahmad Ammar Bin Zulkifli', '3 BESTARI', '120304085543', 'LELAKI', 88, 82, 95, 90, 86, 'PN. NORAINI BINTI HASNAN', 'Pencapaian cemerlang. Dikehendaki mengekalkan prestasi ini.'],
+                ['Nur Aishah Binti Rosli', '3 BESTARI', '120712086654', 'PEREMPUAN', 94, 90, 98, 92, 91, 'PN. NORAINI BINTI HASNAN', 'Pencapaian amat baik dan sangat berdisiplin di dalam kelas.'],
+                ['Muhammad Danish Bin Hafiz', '3 BESTARI', '120111081123', 'LELAKI', 68, 72, 54, 60, 65, 'PN. NORAINI BINTI HASNAN', 'Perlu lebih banyak latihan terutamanya subjek Matematik.'],
+                ['Siti Khadijah Binti Azman', '3 BESTARI', '120909087788', 'PEREMPUAN', 75, 80, 82, 79, 85, 'PN. NORAINI BINTI HASNAN', 'Menunjukkan peningkatan yang berterusan. Syabas!'],
+                ['Lim Wei Xiang', '3 CERDAS', '120405089912', 'LELAKI', 82, 85, 90, 84, 78, 'EN. RAZAK BIN HARUN', 'Komited dan sentiasa memberikan tumpuan penuh.'],
+                ['Muhammad Harith Bin Yusof', '3 CERDAS', '120228084433', 'LELAKI', 62, 58, 65, 60, 70, 'EN. RAZAK BIN HARUN', 'Boleh mencapai keputusan yang lebih baik jika berfokus.']
+            ];
+
+            renderSpreadsheetGrid(sampleArray);
+            processData();
+        }
+
+        // File Upload Handling
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheet = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheet];
+                const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+
+                const formattedGrid = [];
+                json.forEach((row, idx) => {
+                    if (idx === 0 && (isNaN(row[4]) || row[0]?.toString().toLowerCase().includes('nama'))) return;
+                    if (row.length >= 6) {
+                        formattedGrid.push([
+                            row[0] || '',
+                            row[1] || '',
+                            row[2] || '',
+                            row[3] || 'LELAKI',
+                            parseFloat(row[4]) || 0,
+                            parseFloat(row[5]) || 0,
+                            parseFloat(row[6]) || 0,
+                            parseFloat(row[7]) || 0,
+                            parseFloat(row[8]) || 0,
+                            row[9] || 'PN. NORAINI BINTI HASNAN',
+                            row[10] || ''
+                        ]);
+                    }
+                });
+
+                if (formattedGrid.length > 0) {
+                    renderSpreadsheetGrid(formattedGrid);
+                    processData();
+                    alert('Data Excel berjaya dimuat naik dan dimasukkan ke dalam jadual!');
+                } else {
+                    alert('Format fail Excel tidak setara. Sila pastikan lajur mengikut susunan yang ditetapkan.');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Render Slips View Matching Exact Image Template
+        function renderSlips() {
+            if (parsedStudents.length === 0) processData();
+
+            const container = document.getElementById('slips-container');
+            const classTabsContainer = document.getElementById('class-tabs-container');
+            const studentSelect = document.getElementById('student-select');
+
+            const classes = ['ALL', ...new Set(parsedStudents.map(s => s.className))];
+
+            classTabsContainer.innerHTML = classes.map(c => `
+                <button onclick="filterClassSlips('${c}')" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap ${activeClassTab === c ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+                    ${c === 'ALL' ? 'Semua Kelas' : 'Kelas: ' + c}
+                </button>
+            `).join('');
+
+            const filtered = activeClassTab === 'ALL' 
+                ? parsedStudents 
+                : parsedStudents.filter(s => s.className === activeClassTab);
+
+            studentSelect.innerHTML = `<option value="all">-- Semua Murid (${filtered.length} Slip) --</option>` +
+                filtered.map(s => `<option value="${s.mykid}">${s.name} (${s.className})</option>`).join('');
+
+            renderSelectedStudentSlip();
+        }
+
+        function filterClassSlips(className) {
+            activeClassTab = className;
+            renderSlips();
+        }
+
+        function renderSelectedStudentSlip() {
+            const container = document.getElementById('slips-container');
+            const selectedVal = document.getElementById('student-select').value;
+            const schoolName = document.getElementById('cfg-school-name').value;
+            const examTitle = document.getElementById('cfg-exam-title').value;
+
+            let filtered = activeClassTab === 'ALL' 
+                ? parsedStudents 
+                : parsedStudents.filter(s => s.className === activeClassTab);
+
+            if (selectedVal !== 'all') {
+                filtered = filtered.filter(s => s.mykid === selectedVal);
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="bg-white p-8 rounded-2xl text-center text-slate-500 shadow-sm">Tiada rekod slip keputusan untuk dipaparkan.</div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map((s, index) => {
+                const defaultLogo = "https://placehold.co/100x100/6366f1/ffffff?text=LOGO";
+                const logoSrc = schoolLogoDataUrl || defaultLogo;
+
+                const schoolLines = escapeHtml(schoolName).split('\n');
+
+                return `
+                <div class="slip-card bg-white p-8 sm:p-12 rounded-none shadow-sm border border-slate-300 font-sans text-black ${index < filtered.length - 1 ? 'page-break' : ''}">
+                    
+                    <!-- Exact Header Layout from Reference Image -->
+                    <div class="text-center flex flex-col items-center justify-center mb-2">
+                        <img src="${logoSrc}" class="w-16 h-16 object-contain mb-2" alt="Logo Sekolah" onerror="this.src='${defaultLogo}'">
+                        ${schoolLines.map(line => `<h2 class="text-sm sm:text-base font-bold uppercase tracking-wide leading-tight text-black">${line}</h2>`).join('')}
+                    </div>
+
+                    <!-- Framed Exam Title Box -->
+                    <div class="w-full border-2 border-black py-1 px-3 text-center mb-6">
+                        <h3 class="text-sm font-bold uppercase tracking-wide text-black">${escapeHtml(examTitle)}</h3>
+                    </div>
+
+                    <!-- Student Details Grid Matching Screenshot Layout -->
+                    <div class="grid grid-cols-2 gap-x-8 gap-y-1 text-xs sm:text-sm mb-6 pb-2">
+                        <div class="flex">
+                            <span class="w-24 text-black font-semibold">Nama :</span>
+                            <span class="font-bold text-black uppercase">${escapeHtml(s.name)}</span>
+                        </div>
+                        <div class="flex">
+                            <span class="w-24 text-black font-semibold">Kelas :</span>
+                            <span class="font-bold text-black uppercase">${escapeHtml(s.className)}</span>
+                        </div>
+                        <div class="flex">
+                            <span class="w-24 text-black font-semibold">No K/P :</span>
+                            <span class="text-black">${escapeHtml(s.mykid)}</span>
+                        </div>
+                        <div class="flex">
+                            <span class="w-24 text-black font-semibold">Jantina :</span>
+                            <span class="text-black uppercase">${escapeHtml(s.jantina)}</span>
+                        </div>
+                    </div>
+
+                    <!-- Clean Minimal Table with Top and Bottom Heavy Lines -->
+                    <div class="border-t-2 border-b-2 border-black py-1 mb-8">
+                        <table class="w-full text-left text-xs sm:text-sm">
+                            <thead>
+                                <tr class="text-black font-bold border-b border-black">
+                                    <th class="py-2 px-2 w-12 text-center">Bil</th>
+                                    <th class="py-2 px-2">Mata Pelajaran</th>
+                                    <th class="py-2 px-2 text-center w-28">Markah</th>
+                                    <th class="py-2 px-2 text-center w-24">Gred</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-black">
+                                <tr class="border-b border-slate-100">
+                                    <td class="py-2 px-2 text-center">1</td>
+                                    <td class="py-2 px-2 font-medium">Bahasa Melayu</td>
+                                    <td class="py-2 px-2 text-center font-bold">${s.bm}</td>
+                                    <td class="py-2 px-2 text-center font-bold">
+                                        <input type="text" class="no-print w-10 text-center border border-slate-300 rounded uppercase font-bold text-indigo-700" value="${s.bmGrade}" onchange="updateStudentGradeOverride(${s.id}, 'bm', this.value)">
+                                        <span class="hidden print:inline">${s.bmGrade}</span>
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-slate-100">
+                                    <td class="py-2 px-2 text-center">2</td>
+                                    <td class="py-2 px-2 font-medium">Bahasa Inggeris</td>
+                                    <td class="py-2 px-2 text-center font-bold">${s.bi}</td>
+                                    <td class="py-2 px-2 text-center font-bold">
+                                        <input type="text" class="no-print w-10 text-center border border-slate-300 rounded uppercase font-bold text-indigo-700" value="${s.biGrade}" onchange="updateStudentGradeOverride(${s.id}, 'bi', this.value)">
+                                        <span class="hidden print:inline">${s.biGrade}</span>
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-slate-100">
+                                    <td class="py-2 px-2 text-center">3</td>
+                                    <td class="py-2 px-2 font-medium">Matematik</td>
+                                    <td class="py-2 px-2 text-center font-bold">${s.mt}</td>
+                                    <td class="py-2 px-2 text-center font-bold">
+                                        <input type="text" class="no-print w-10 text-center border border-slate-300 rounded uppercase font-bold text-indigo-700" value="${s.mtGrade}" onchange="updateStudentGradeOverride(${s.id}, 'mt', this.value)">
+                                        <span class="hidden print:inline">${s.mtGrade}</span>
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-slate-100">
+                                    <td class="py-2 px-2 text-center">4</td>
+                                    <td class="py-2 px-2 font-medium">Sains</td>
+                                    <td class="py-2 px-2 text-center font-bold">${s.sn}</td>
+                                    <td class="py-2 px-2 text-center font-bold">
+                                        <input type="text" class="no-print w-10 text-center border border-slate-300 rounded uppercase font-bold text-indigo-700" value="${s.snGrade}" onchange="updateStudentGradeOverride(${s.id}, 'sn', this.value)">
+                                        <span class="hidden print:inline">${s.snGrade}</span>
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-slate-100">
+                                    <td class="py-2 px-2 text-center">5</td>
+                                    <td class="py-2 px-2 font-medium">Sejarah</td>
+                                    <td class="py-2 px-2 text-center font-bold">${s.sej}</td>
+                                    <td class="py-2 px-2 text-center font-bold">
+                                        <input type="text" class="no-print w-10 text-center border border-slate-300 rounded uppercase font-bold text-indigo-700" value="${s.sejGrade}" onchange="updateStudentGradeOverride(${s.id}, 'sej', this.value)">
+                                        <span class="hidden print:inline">${s.sejGrade}</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Bottom Statistical Summary Matching Screenshot Layout -->
+                    <div class="border-t-2 border-b-2 border-black py-4 mb-6">
+                        <div class="grid grid-cols-2 gap-x-12 gap-y-1.5 text-xs sm:text-sm text-black">
+                            <!-- Left Column -->
+                            <div class="space-y-1.5">
+                                <div class="flex justify-between">
+                                    <span>Bilangan matapelajaran</span>
+                                    <span>: ${s.subjectCount}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Kedudukan dalam kelas</span>
+                                    <span>: ${s.classRank}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Kedudukan keseluruhan</span>
+                                    <span>: ${s.overallRank}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Pencapaian gred keseluruhan</span>
+                                    <span>: ${s.gredSummary}</span>
+                                </div>
+                            </div>
+
+                            <!-- Right Column -->
+                            <div class="space-y-1.5">
+                                <div class="flex justify-between">
+                                    <span>Jumlah markah</span>
+                                    <span>: ${s.total}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Peratus</span>
+                                    <span>: ${s.avg}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Gred purata</span>
+                                    <span>: ${s.gpc}</span>
+                                </div>
+                                <div class="flex justify-between font-bold">
+                                    <span>Keputusan</span>
+                                    <span>: ${s.resultStatus}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Teacher Class Name & Remarks Matching Image -->
+                    <div class="space-y-3 text-xs sm:text-sm text-black mb-8">
+                        <div class="flex">
+                            <span class="w-36 font-semibold">Nama guru kelas</span>
+                            <span>: ${escapeHtml(s.teacherName)}</span>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="w-36 font-semibold">Ulasan</span>
+                            <span>: ${escapeHtml(s.notes)}</span>
+                        </div>
+                    </div>
+
+                    <!-- Signature Block -->
+                    <div class="grid grid-cols-3 gap-4 text-center pt-8 text-xs text-black">
+                        <div class="flex flex-col justify-between items-center h-24">
+                            <span>Tandatangan Ibu Bapa / Penjaga</span>
+                            <div class="w-36 border-b border-dashed border-black"></div>
+                    <!-- Signature Block (Guru Besar Removed as requested) -->
+                    <div class="grid grid-cols-2 gap-8 text-center pt-8 text-xs text-black">
+                        <div class="flex flex-col justify-between items-center h-24">
+                            <span>Tandatangan Ibu Bapa / Penjaga</span>
+                            <div class="w-48 border-b border-dashed border-black"></div>
+                            <span class="text-[10px]">( Tarikh: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; )</span>
+                        </div>
+                        <div class="flex flex-col justify-between items-center h-24">
+                            <span>Tandatangan Guru Kelas</span>
+                            <div class="w-48 border-b border-dashed border-black"></div>
+                            <span class="text-[10px]">( Nama & Cop )</span>
+                        </div>
+                    </div>
+
+                </div>
+                `;
+            }).join('');
+        }
+
+        // Print Action
+        function printSlips() {
+            window.print();
+        }
+
+        // Render Analysis View
+        function renderAnalysis() {
+            if (parsedStudents.length === 0) processData();
+
+            renderClassAnalysis();
+            renderSubjectAnalysis();
+        }
+
+        // Class Analysis Logic
+        function renderClassAnalysis() {
+            const containerCards = document.getElementById('class-summary-cards');
+            const classFilter = document.getElementById('analysis-class-filter');
+            const tableBody = document.getElementById('analysis-class-table-body');
+
+            const classes = [...new Set(parsedStudents.map(s => s.className))];
+
+            if (classFilter.options.length === 0) {
+                classFilter.innerHTML = `<option value="ALL">Semua Kelas</option>` + 
+                    classes.map(c => `<option value="${c}">Kelas: ${c}</option>`).join('');
+            }
+
+            containerCards.innerHTML = classes.map(cName => {
+                const cStudents = parsedStudents.filter(s => s.className === cName);
+                const avgClass = (cStudents.reduce((acc, s) => acc + s.avg, 0) / cStudents.length).toFixed(1);
+                const passCount = cStudents.filter(s => s.isPass).length;
+                const passPercent = ((passCount / cStudents.length) * 100).toFixed(1);
+
+                return `
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="font-bold text-slate-800 text-base">${escapeHtml(cName)}</h4>
+                        <span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-md">${cStudents.length} Murid</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 mt-2">
+                        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                            <span class="text-[10px] text-slate-400 font-semibold block uppercase">Purata Kelas</span>
+                            <span class="text-lg font-black text-indigo-700">${avgClass}%</span>
+                        </div>
+                        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                            <span class="text-[10px] text-slate-400 font-semibold block uppercase">% Peratus Lulus</span>
+                            <span class="text-lg font-black text-emerald-600">${passPercent}%</span>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+
+            const selectedClass = classFilter.value || 'ALL';
+            let tableData = selectedClass === 'ALL' 
+                ? [...parsedStudents] 
+                : parsedStudents.filter(s => s.className === selectedClass);
+
+            tableData.sort((a, b) => b.avg - a.avg);
+
+            tableBody.innerHTML = tableData.map((s, idx) => {
+                return `
+                <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition">
+                    <td class="p-3 text-center font-bold text-slate-500">${idx + 1}</td>
+                    <td class="p-3 font-semibold text-slate-800 uppercase">${escapeHtml(s.name)}</td>
+                    <td class="p-3 text-slate-600">${escapeHtml(s.className)}</td>
+                    <td class="p-3 text-center font-medium">${s.bm} (${s.bmGrade})</td>
+                    <td class="p-3 text-center font-medium">${s.bi} (${s.biGrade})</td>
+                    <td class="p-3 text-center font-medium">${s.mt} (${s.mtGrade})</td>
+                    <td class="p-3 text-center font-medium">${s.sn} (${s.snGrade})</td>
+                    <td class="p-3 text-center font-medium">${s.sej} (${s.sejGrade})</td>
+                    <td class="p-3 text-center font-bold text-slate-800">${s.total}</td>
+                    <td class="p-3 text-center font-black text-indigo-700">${s.avg}%</td>
+                    <td class="p-3 text-center">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${s.isPass ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">
+                            ${s.resultStatus}
+                        </span>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        // Subject Analysis Logic & Render
+        function renderSubjectAnalysis() {
+            const tableBody = document.getElementById('analysis-subject-table-body');
+            const totalStudents = parsedStudents.length;
+
+            if (totalStudents === 0) return;
+
+            const subjectStats = SUBJECT_KEYS.map(key => {
+                const grades = { A: 0, B: 0, C: 0, D: 0, E: 0 };
+                let totalScore = 0;
+
+                parsedStudents.forEach(s => {
+                    const score = s[key];
+                    totalScore += score;
+                    const g = s[key + 'Grade'] || getGrade(score);
+                    if (grades[g] !== undefined) grades[g]++;
+                });
+
+                const passCount = grades.A + grades.B + grades.C + grades.D;
+                const passPercent = ((passCount / totalStudents) * 100).toFixed(1);
+                const avgScore = (totalScore / totalStudents).toFixed(1);
+
+                return {
+                    key,
+                    name: SUBJECT_NAMES[key],
+                    totalStudents,
+                    grades,
+                    passCount,
+                    passPercent,
+                    avgScore
+                };
+            });
+
+            tableBody.innerHTML = subjectStats.map(st => `
+                <tr class="border-b border-slate-100 hover:bg-slate-50 transition">
+                    <td class="p-3 font-bold text-slate-800">${st.name}</td>
+                    <td class="p-3 text-center text-slate-600">${st.totalStudents}</td>
+                    <td class="p-3 text-center font-semibold text-emerald-600">${st.grades.A}</td>
+                    <td class="p-3 text-center font-semibold text-blue-600">${st.grades.B}</td>
+                    <td class="p-3 text-center font-semibold text-amber-600">${st.grades.C}</td>
+                    <td class="p-3 text-center font-semibold text-orange-600">${st.grades.D}</td>
+                    <td class="p-3 text-center font-semibold text-red-600">${st.grades.E}</td>
+                    <td class="p-3 text-center font-bold text-slate-700">${st.passCount}</td>
+                    <td class="p-3 text-center font-bold text-emerald-600">${st.passPercent}%</td>
+                    <td class="p-3 text-center font-black text-indigo-700">${st.avgScore}%</td>
+                </tr>
+            `).join('');
+
+            window.latestSubjectStats = subjectStats;
+        }
+
+        // Render Visual Charts using Chart.js
+        function renderSubjectCharts() {
+            const stats = window.latestSubjectStats;
+            if (!stats) return;
+
+            if (gradeChartInstance) gradeChartInstance.destroy();
+            if (avgChartInstance) avgChartInstance.destroy();
+
+            const ctxGrade = document.getElementById('chart-grade-distribution').getContext('2d');
+            gradeChartInstance = new Chart(ctxGrade, {
+                type: 'bar',
+                data: {
+                    labels: stats.map(s => s.name),
+                    datasets: [
+                        { label: 'Gred A', data: stats.map(s => s.grades.A), backgroundColor: '#10b981' },
+                        { label: 'Gred B', data: stats.map(s => s.grades.B), backgroundColor: '#3b82f6' },
+                        { label: 'Gred C', data: stats.map(s => s.grades.C), backgroundColor: '#f59e0b' },
+                        { label: 'Gred D', data: stats.map(s => s.grades.D), backgroundColor: '#f97316' },
+                        { label: 'Gred E', data: stats.map(s => s.grades.E), backgroundColor: '#ef4444' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: {
+                        x: { stacked: true },
+                        y: { stacked: true, beginAtZero: true }
+                    }
+                }
+            });
+
+            const ctxAvg = document.getElementById('chart-subject-averages').getContext('2d');
+            avgChartInstance = new Chart(ctxAvg, {
+                type: 'bar',
+                data: {
+                    labels: stats.map(s => s.name),
+                    datasets: [{
+                        label: 'Purata Markah (%)',
+                        data: stats.map(s => s.avgScore),
+                        backgroundColor: '#6366f1',
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, max: 100 }
+                    }
+                }
+            });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;")
+                      .replace(/</g, "&lt;")
+                      .replace(/>/g, "&gt;")
+                      .replace(/"/g, "&quot;")
+                      .replace(/'/g, "&#039;");
+        }
+
+        // Share Link Functionality
+        function shareLink() {
+            const currentUrl = window.location.href;
+            const dummy = document.createElement("input");
+            document.body.appendChild(dummy);
+            dummy.value = currentUrl;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+            
+            // Show custom alert message box
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-5 right-5 z-50 bg-emerald-700 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 transition-all duration-300 transform translate-y-0';
+            toast.innerHTML = `<i data-lucide="check-circle" class="w-5 h-5"></i> <span class="text-sm font-medium">Pautan web berjaya disalin ke papan keratan (clipboard)!</span>`;
+            document.body.appendChild(toast);
+            lucide.createIcons();
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

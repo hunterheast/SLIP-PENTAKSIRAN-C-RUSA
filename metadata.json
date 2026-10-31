@@ -1,0 +1,8 @@
+{
+  "name": "Penjana Slip Keputusan & Analisis Pentaksiran Sekolah Rendah",
+  "description": "Aplikasi lengkap penjana slip keputusan pentaksiran sekolah rendah (PBD/UASA) dengan sokongan input spreadsheet pukal, analisis kelas, taburan gred, dan cetakan PDF rasmi A4.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

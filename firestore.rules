@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default-deny catch-all safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function isValidSchoolData(data) {
+      return data.keys().hasAll(['settings', 'students', 'subjects', 'gradeScale'])
+        && data.settings is map
+        && data.students is list
+        && data.students.size() <= 1000
+        && data.subjects is list
+        && data.subjects.size() <= 50
+        && data.gradeScale is map;
+    }
+
+    // School Assessment Dataset Collection
+    match /school_data/{documentId} {
+      // Anyone with the shared link (parents and teachers) can read the official school assessment slips
+      allow read: if isValidId(documentId);
+
+      // Writes are validated to maintain data integrity
+      allow create: if isValidId(documentId) && isValidSchoolData(incoming());
+      allow update: if isValidId(documentId) && isValidSchoolData(incoming());
+      allow delete: if false;
+    }
+  }
+}
